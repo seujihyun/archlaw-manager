@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>공문·법령 업무관리 v0.4</title>
+<style>
+  :root{
+    --bg:#f7f8fb; --card:#fff; --text:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+    --accent:#2563eb; --danger:#dc2626; --warn:#d97706; --ok:#059669;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif;background:var(--bg);color:var(--text)}
+  header{background:#111827;color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between}
+  header h1{font-size:20px;margin:0}
+  header small{color:#cbd5e1}
+  .wrap{max-width:1180px;margin:0 auto;padding:24px}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{border:1px solid var(--line);background:#fff;padding:9px 14px;border-radius:10px;cursor:pointer}
+  .tab.active{background:#111827;color:#fff;border-color:#111827}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .stat .n{font-size:30px;font-weight:800;margin-top:8px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px}
+  .panel h2{font-size:17px;margin:0 0 14px}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  input,select,textarea{border:1px solid #d1d5db;border-radius:9px;padding:9px 10px;font:inherit;background:#fff}
+  textarea{width:100%;min-height:90px;resize:vertical}
+  .toolbar input{min-width:220px}
+  button{border:0;border-radius:9px;padding:9px 12px;font:inherit;cursor:pointer}
+  .btn{background:var(--accent);color:#fff}
+  .btn2{background:#eef2ff;color:#3730a3}
+  .ghost{background:#f3f4f6;color:#374151}
+  .danger{background:#fee2e2;color:#991b1b}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:12px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{font-size:13px;color:var(--muted);background:#fafafa;position:sticky;top:0}
+  tr:hover td{background:#fcfcfd}
+  .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
+  .b-progress{background:#dbeafe;color:#1d4ed8}
+  .b-wait{background:#fef3c7;color:#92400e}
+  .b-done{background:#d1fae5;color:#065f46}
+  .b-law{background:#ede9fe;color:#5b21b6}
+  .b-doc{background:#e0f2fe;color:#075985}
+  .b-urgent{background:#fecaca;color:#7f1d1d}
+  .overdue{color:var(--danger);font-weight:700}
+  .soon{color:var(--warn);font-weight:700}
+  .muted{color:var(--muted)}
+  .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+  .field input,.field select{width:100%}
+  .field.full{grid-column:1/-1}
+  dialog{border:0;border-radius:16px;padding:0;max-width:760px;width:94%;box-shadow:0 20px 80px rgba(0,0,0,.25)}
+  dialog::backdrop{background:rgba(17,24,39,.45)}
+  .modal-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  .modal-body{padding:20px;max-height:70vh;overflow-y:auto}
+  .modal-foot{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+  .empty{text-align:center;padding:32px;color:var(--muted)}
+  .note{font-size:13px;color:var(--muted);margin-top:8px}
+  .excel-btn{background:#ecfdf5;color:#065f46}
+  .template-btn{background:#f0fdf4;color:#166534}
+  .import-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .mini-stat{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fafafa}
+  .mini-stat strong{display:block;font-size:22px;margin-top:4px}
+  .warnbox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:12px}
+  .okbox{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:12px}
+  .version-badge{font-size:11px;background:#f3f4f6;color:#6b7280;padding:2px 6px;border-radius:4px;margin-left:6px}
+  @media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}.wrap{padding:14px}table{font-size:12px}.hide-sm{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>공문·법령 업무관리<span class="version-badge">v0.4</span></h1>
+    <small>archlaw-manager.store · 개인용 · 데이터 자동 저장</small>
+  </div>
+  <button class="btn" onclick="openForm()">+ 업무 등록</button>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab active" data-filter="all" onclick="setTab(this)">전체</button>
+    <button class="tab" data-filter="법령" onclick="setTab(this)">법령</button>
+    <button class="tab" data-filter="공문" onclick="setTab(this)">공문</button>
+    <button class="tab" data-filter="의견조회" onclick="setTab(this)">의견조회</button>
+    <button class="tab" data-filter="진행중" onclick="setTab(this)">진행중</button>
+    <button class="tab" data-filter="회신대기" onclick="setTab(this)">회신대기</button>
+    <button class="tab" data-filter="완료" onclick="setTab(this)">완료</button>
+  </div>
+
+  <section class="grid">
+    <div class="stat"><div class="muted">진행중</div><div class="n" id="statProgress">0</div></div>
+    <div class="stat"><div class="muted">오늘 마감</div><div class="n" id="statToday">0</div></div>
+    <div class="stat"><div class="muted">7일 이내 마감</div><div class="n" id="statSoon">0</div></div>
+    <div class="stat"><div class="muted">회신 대기중</div><div class="n" id="statWait">0</div></div>
+  </section>
+
+  <section class="panel">
+    <div class="toolbar">
+      <input id="search" placeholder="제목, 법령명, 발송처, 메모 검색" oninput="render()">
+      <select id="statusFilter" onchange="render()">
+        <option value="">상태 전체</option>
+        <option>진행중</option>
+        <option>회신대기</option>
+        <option>완료</option>
+      </select>
+      <select id="typeFilter" onchange="render()">
+        <option value="">구분 전체</option>
+        <option>법령</option>
+        <option>공문</option>
+      </select>
+      <button class="excel-btn" onclick="document.getElementById('excelFile').click()">엑셀 일괄등록</button>
+      <input id="excelFile" type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleExcelImport(event)">
+      <button class="template-btn" onclick="downloadExcelTemplate()">엑셀 양식</button>
+      <button class="ghost" onclick="exportJSON()">백업 내보내기</button>
+      <label class="ghost" style="cursor:pointer">
+        백업 불러오기
+        <input id="importFile" type="file" accept=".json" style="display:none" onchange="importJSON(event)">
+      </label>
+    </div>
+
+    <div style="overflow:auto;max-height:560px">
+      <table>
+        <thead>
+          <tr>
+            <th>구분</th><th>제목/법령명</th><th class="hide-sm">공포·접수일</th>
+            <th>시행·회신기한</th><th>해야 할 일</th><th>상태</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="note">
+      ※ v0.4부터 데이터 구조 개선 (기존 데이터 자동 호환)<br>
+      ※ 엑셀 일괄등록은 첫 번째 시트를 읽습니다. 권장 열: 구분, 제목/법령명, 공포번호/문서번호, 공포일/접수일, 시행일/회신기한, 담당/발송처, 해야 할 일, 주요내용/메모, 상태
+    </div>
+  </section>
+</div>
+
+<dialog id="dlg">
+  <form id="taskForm" method="dialog" onsubmit="saveTask(event)">
+    <div class="modal-head">
+      <strong id="formTitle">업무 등록</strong>
+      <button type="button" class="ghost" onclick="dlg.close()">닫기</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="id">
+      <div class="form-grid">
+        <div class="field">
+          <label>구분</label>
+          <select id="type" required onchange="toggleLabels()">
+            <option value="법령">법령</option>
+            <option value="공문">공문</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>상태</label>
+          <select id="status" required>
+            <option>진행중</option>
+            <option>회신대기</option>
+            <option>완료</option>
+          </select>
+        </div>
+
+        <div class="field full">
+          <label id="titleLabel">법령명</label>
+          <input id="title" required placeholder="예: 건축법">
+        </div>
+
+        <div class="field">
+          <label id="refLabel">공포번호</label>
+          <input id="refNo" placeholder="예: 제00000호">
+        </div>
+        <div class="field">
+          <label id="date1Label">공포일</label>
+          <input id="date1" type="date">
+        </div>
+
+        <div class="field">
+          <label id="date2Label">시행일</label>
+          <input id="date2" type="date">
+        </div>
+        <div class="field">
+          <label>담당/발송처</label>
+          <input id="owner" placeholder="예: 건축팀 / 대한건축사협회">
+        </div>
+
+        <div class="field full">
+          <label>해야 할 일</label>
+          <input id="action" placeholder="예: 회원 안내문 작성 후 발송">
+        </div>
+
+        <!-- v0.4 신규: 의견조회 필드 -->
+        <div class="field">
+          <label>의견조회 유형</label>
+          <select id="inquiryType">
+            <option value="">없음</option>
+            <option>법령의견</option>
+            <option>행정지도</option>
+            <option>기타</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>의견조회 발송처</label>
+          <input id="inquiryRecipient" placeholder="예: 국토교통부 건축정책과">
+        </div>
+
+        <!-- v0.4 신규: 법령 분류 & 우선순위 -->
+        <div class="field">
+          <label>법령 분류</label>
+          <select id="lawCategory">
+            <option value="">없음</option>
+            <option>건축법</option>
+            <option>건축사법</option>
+            <option>도시개발법</option>
+            <option>주택법</option>
+            <option>기타</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>우선순위</label>
+          <select id="priority">
+            <option value="">일반</option>
+            <option>중요</option>
+            <option>긴급</option>
+          </select>
+        </div>
+
+        <div class="field full">
+          <label>주요내용 / 메모</label>
+          <textarea id="memo" placeholder="개정 주요내용, 회신사항, 참고메모 등"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="ghost" onclick="dlg.close()">취소</button>
+      <button type="submit" class="btn">저장</button>
+      <button type="button" class="danger" id="delBtn" style="display:none" onclick="deleteTask(event)">삭제</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="excelDlg">
+  <div class="modal-head">
+    <strong>엑셀 일괄등록 미리보기</strong>
+    <button type="button" class="ghost" onclick="excelDlg.close()">닫기</button>
+  </div>
+  <div class="modal-body">
+    <div class="import-summary">
+      <div class="mini-stat"><div class="muted">전체 행</div><strong id="excelTotal">0</strong></div>
+      <div class="mini-stat"><div class="muted">등록 가능</div><strong id="excelValid" style="color:var(--ok)">0</strong></div>
+      <div class="mini-stat"><div class="muted">제외 (제목 없음)</div><strong id="excelInvalid" style="color:var(--danger)">0</strong></div>
+    </div>
+    <div id="excelMessage"></div>
+    <div style="overflow:auto;max-height:300px">
+      <table>
+        <thead>
+          <tr><th>행</th><th>구분</th><th>제목</th><th>공포일</th><th>시행일</th><th>상태</th></tr>
+        </thead>
+        <tbody id="excelPreviewBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button type="button" class="ghost" onclick="excelDlg.close()">취소</button>
+    <button type="button" class="btn" id="excelConfirmBtn" onclick="confirmExcelImport()">확인</button>
+  </div>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+<script>
+const STORAGE_KEY = "archlaw_data_v0.4";
+const STORAGE_VERSION = "0.4";
+
+function load(){
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if(!stored) return [];
+  try{
+    const parsed = JSON.parse(stored);
+    if(Array.isArray(parsed)) return parsed; // v0.2 호환
+    if(parsed.data) return parsed.data; // v0.4 구조
+  }catch(e){}
+  return [];
+}
+
+function saveAll(data){
+  const wrapped = {
+    version: STORAGE_VERSION,
+    last_updated: new Date().toISOString(),
+    data: data
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(wrapped));
+}
+
+function migrateV02ToV04(oldItem){
+  // v0.2 데이터에 v0.4 신규 필드 추가
+  if(!oldItem.created_at){
+    return {
+      ...oldItem,
+      inquiry_type: oldItem.inquiry_type || null,
+      inquiry_recipient: oldItem.inquiry_recipient || "",
+      inquiry_received_from: oldItem.inquiry_received_from || "",
+      law_category: oldItem.law_category || null,
+      priority: oldItem.priority || null,
+      ai_summary: null,
+      auto_draft: null,
+      extracted_keywords: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+  }
+  return oldItem;
+}
+
+function formatDate(d){
+  if(!d) return "";
+  if(typeof d === "string" && /^\d{4}-\d{2}-\d{2}/.test(d)) return d.slice(0,10);
+  const dt = new Date(d);
+  if(isNaN(dt)) return "";
+  const y=dt.getFullYear(), m=String(dt.getMonth()+1).padStart(2,"0"), d_=String(dt.getDate()).padStart(2,"0");
+  return `${y}-${m}-${d_}`;
+}
+
+function badgeStatus(s){
+  const map={
+    "진행중":"<span class='badge b-progress'>진행중</span>",
+    "회신대기":"<span class='badge b-wait'>회신대기</span>",
+    "완료":"<span class='badge b-done'>완료</span>"
+  };
+  return map[s] || "";
+}
+
+function badgePriority(p){
+  if(!p || p === "일반") return "";
+  if(p === "중요") return " <span class='badge' style='background:#fef3c7;color:#92400e'>중요</span>";
+  if(p === "긴급") return " <span class='badge b-urgent'>긴급</span>";
+  return "";
+}
+
+let currentTab = "all";
+let currentStatusFilter = "";
+let currentTypeFilter = "";
+
+function setTab(btn){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  btn.classList.add("active");
+  currentTab = btn.dataset.filter;
+  render();
+}
+
+function render(){
+  const data = load().map(migrateV02ToV04);
+  const search = document.getElementById("search").value.toLowerCase();
+  const statusF = document.getElementById("statusFilter").value;
+  const typeF = document.getElementById("typeFilter").value;
+
+  let filtered = data.filter(row => {
+    const matchSearch = !search || 
+      (row.title && row.title.toLowerCase().includes(search)) ||
+      (row.owner && row.owner.toLowerCase().includes(search)) ||
+      (row.memo && row.memo.toLowerCase().includes(search)) ||
+      (row.refNo && row.refNo.toLowerCase().includes(search));
+    
+    const matchStatus = !statusF || row.status === statusF;
+    const matchType = !typeF || row.type === typeF;
+    const matchTab = currentTab === "all" || 
+      (currentTab === "의견조회" && row.inquiry_type) ||
+      (currentTab !== "의견조회" && row.type === currentTab) ||
+      (currentTab !== "의견조회" && row.status === currentTab);
+    
+    return matchSearch && matchStatus && matchType && matchTab;
+  });
+
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = filtered.length ? filtered.map(r => `
+    <tr>
+      <td><span class='badge' style='background:${r.type==="법령"?"#ede9fe":"#e0f2fe"};color:${r.type==="법령"?"#5b21b6":"#075985"}'>${r.type}</span></td>
+      <td>${escapeHtml(r.title)}</td>
+      <td class="hide-sm">${formatDate(r.date1)}</td>
+      <td>
+        <span class="${r.date2 && isOverdue(r.date2)?"overdue":""}${r.date2 && isDue7Days(r.date2) && !isOverdue(r.date2)?" soon":""}">${formatDate(r.date2)}</span>
+      </td>
+      <td>${escapeHtml(r.action)}</td>
+      <td>${badgeStatus(r.status)}${badgePriority(r.priority)}</td>
+      <td style="text-align:center"><button class="btn2" onclick="editTask('${r.id}')">수정</button></td>
+    </tr>
+  `).join("") : `<tr><td colspan="7" class="empty">등록된 업무가 없습니다.</td></tr>`;
+
+  updateStats(data);
+}
+
+function updateStats(data){
+  const progress = data.filter(x=>x.status==="진행중").length;
+  const today = data.filter(x=>x.date2 && isToday(x.date2)).length;
+  const soon = data.filter(x=>x.date2 && isDue7Days(x.date2) && !isToday(x.date2)).length;
+  const wait = data.filter(x=>x.status==="회신대기").length;
+  
+  document.getElementById("statProgress").textContent = progress;
+  document.getElementById("statToday").textContent = today;
+  document.getElementById("statSoon").textContent = soon;
+  document.getElementById("statWait").textContent = wait;
+}
+
+function isToday(dateStr){
+  const d = new Date(dateStr);
+  const today = new Date();
+  return d.toDateString() === today.toDateString();
+}
+
+function isDue7Days(dateStr){
+  const d = new Date(dateStr);
+  const today = new Date();
+  return d >= today && d <= new Date(today.getTime() + 7*24*60*60*1000);
+}
+
+function isOverdue(dateStr){
+  return new Date(dateStr) < new Date();
+}
+
+function openForm(){
+  document.getElementById("id").value = "";
+  document.getElementById("taskForm").reset();
+  document.getElementById("formTitle").textContent = "업무 등록";
+  document.getElementById("delBtn").style.display = "none";
+  toggleLabels();
+  dlg.showModal();
+}
+
+function editTask(id){
+  const data = load().map(migrateV02ToV04);
+  const task = data.find(x=>x.id===id);
+  if(!task) return;
+  
+  document.getElementById("id").value = task.id;
+  document.getElementById("type").value = task.type;
+  document.getElementById("title").value = task.title;
+  document.getElementById("refNo").value = task.refNo || "";
+  document.getElementById("date1").value = task.date1 || "";
+  document.getElementById("date2").value = task.date2 || "";
+  document.getElementById("owner").value = task.owner || "";
+  document.getElementById("action").value = task.action || "";
+  document.getElementById("status").value = task.status;
+  document.getElementById("memo").value = task.memo || "";
+  
+  document.getElementById("inquiryType").value = task.inquiry_type || "";
+  document.getElementById("inquiryRecipient").value = task.inquiry_recipient || "";
+  document.getElementById("lawCategory").value = task.law_category || "";
+  document.getElementById("priority").value = task.priority || "";
+  
+  document.getElementById("formTitle").textContent = "업무 수정";
+  document.getElementById("delBtn").style.display = "inline-block";
+  toggleLabels();
+  dlg.showModal();
+}
+
+function toggleLabels(){
+  const type = document.getElementById("type").value;
+  const isShinHang = type === "법령";
+  
+  document.getElementById("titleLabel").textContent = isShinHang ? "법령명" : "공문 제목";
+  document.getElementById("refLabel").textContent = isShinHang ? "공포번호" : "문서번호";
+  document.getElementById("date1Label").textContent = isShinHang ? "공포일" : "접수일";
+  document.getElementById("date2Label").textContent = isShinHang ? "시행일" : "회신기한";
+}
+
+function saveTask(event){
+  event.preventDefault();
+  const id = document.getElementById("id").value || crypto.randomUUID();
+  const task = {
+    id,
+    type: document.getElementById("type").value,
+    title: document.getElementById("title").value,
+    refNo: document.getElementById("refNo").value || "",
+    date1: document.getElementById("date1").value || "",
+    date2: document.getElementById("date2").value || "",
+    owner: document.getElementById("owner").value || "",
+    action: document.getElementById("action").value || "",
+    status: document.getElementById("status").value,
+    memo: document.getElementById("memo").value || "",
+    inquiry_type: document.getElementById("inquiryType").value || null,
+    inquiry_recipient: document.getElementById("inquiryRecipient").value || "",
+    inquiry_received_from: "",
+    law_category: document.getElementById("lawCategory").value || null,
+    priority: document.getElementById("priority").value || null,
+    ai_summary: null,
+    auto_draft: null,
+    extracted_keywords: [],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  const data = load().map(migrateV02ToV04);
+  const idx = data.findIndex(x=>x.id===id);
+  if(idx >= 0){
+    data[idx] = {...data[idx], ...task, updated_at: new Date().toISOString()};
+  }else{
+    data.push(task);
+  }
+  saveAll(data);
+  dlg.close();
+  render();
+}
+
+function deleteTask(event){
+  event.preventDefault();
+  if(!confirm("정말 삭제하시겠습니까?")) return;
+  const id = document.getElementById("id").value;
+  const data = load().map(migrateV02ToV04).filter(x=>x.id!==id);
+  saveAll(data);
+  dlg.close();
+  render();
+}
+
+function exportJSON(){
+  const data = load().map(migrateV02ToV04);
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `archlaw-backup-${new Date().toISOString().split("T")[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJSON(event){
+  const file = event.target.files[0];
+  event.target.value = "";
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try{
+      const imported = JSON.parse(e.target.result);
+      const data = Array.isArray(imported) ? imported : imported.data || [];
+      const migrated = data.map(migrateV02ToV04);
+      saveAll(migrated);
+      render();
+      alert("백업 데이터를 불러왔습니다.");
+    }catch(err){
+      alert("백업 파일을 읽을 수 없습니다.");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function escapeHtml(s){
+  return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));
+}
+
+function pickValue(obj, aliases){
+  const keys = Object.keys(obj || {});
+  for(const a of aliases){
+    const exact = keys.find(k => String(k).trim() === a);
+    if(exact !== undefined && obj[exact] !== undefined && obj[exact] !== null) return obj[exact];
+  }
+  for(const a of aliases){
+    const normA = a.replace(/\s/g,"").toLowerCase();
+    const fuzzy = keys.find(k => String(k).replace(/\s/g,"").toLowerCase() === normA);
+    if(fuzzy !== undefined && obj[fuzzy] !== undefined && obj[fuzzy] !== null) return obj[fuzzy];
+  }
+  return "";
+}
+
+function normalizeDate(v){
+  if(v === null || v === undefined || v === "") return "";
+  if(v instanceof Date && !isNaN(v)){
+    const y=v.getFullYear(), m=String(v.getMonth()+1).padStart(2,"0"), d=String(v.getDate()).padStart(2,"0");
+    return `${y}-${m}-${d}`;
+  }
+  if(typeof v === "number" && typeof XLSX !== "undefined"){
+    const dc = XLSX.SSF.parse_date_code(v);
+    if(dc){
+      return `${String(dc.y).padStart(4,"0")}-${String(dc.m).padStart(2,"0")}-${String(dc.d).padStart(2,"0")}`;
+    }
+  }
+  let s = String(v).trim();
+  if(!s) return "";
+  s = s.replace(/[년./]/g,"-").replace(/월/g,"-").replace(/일/g,"").replace(/\s+/g,"");
+  const m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m) return `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;
+  const d = new Date(s);
+  if(!isNaN(d)){
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
+  return "";
+}
+
+function normalizeRow(row, idx){
+  const rawType = String(pickValue(row,["구분","유형","분류","type"]) || "").trim();
+  const typeVal = ["법령","공문"].includes(rawType) ? rawType : "법령";
+  const titleVal = String(pickValue(row,["제목/법령명","제목","법령명","공문 제목","공문제목","title"]) || "").trim();
+  const rawStatus = String(pickValue(row,["상태","진행상태","처리상태","status"]) || "").trim();
+  const statusVal = ["진행중","회신대기","완료"].includes(rawStatus) ? rawStatus : "진행중";
+  const obj = {
+    _row: idx,
+    id: crypto.randomUUID(),
+    type: typeVal,
+    title: titleVal,
+    refNo: String(pickValue(row,["공포번호/문서번호","공포번호","문서번호","접수번호","번호","refNo"]) || "").trim(),
+    date1: normalizeDate(pickValue(row,["공포일/접수일","공포일","접수일","기안일","date1"])),
+    date2: normalizeDate(pickValue(row,["시행일/회신기한","시행일","회신기한","마감일","회신일","date2"])),
+    owner: String(pickValue(row,["담당/발송처","담당자","담당","발송처","수신처","owner"]) || "").trim(),
+    action: String(pickValue(row,["해야 할 일","해야할일","조치사항","처리내용","업무내용","action"]) || "").trim(),
+    memo: String(pickValue(row,["주요내용/메모","주요내용","메모","비고","내용","memo"]) || "").trim(),
+    status: statusVal,
+    inquiry_type: null,
+    inquiry_recipient: "",
+    law_category: null,
+    priority: null
+  };
+  obj._valid = !!titleVal;
+  return obj;
+}
+
+function parseCSVFallback(text){
+  const rows = [];
+  let row=[], cell="", inQuotes=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i], n=text[i+1];
+    if(c === '"' && inQuotes && n === '"'){ cell+='"'; i++; continue; }
+    if(c === '"'){ inQuotes=!inQuotes; continue; }
+    if(c === ',' && !inQuotes){ row.push(cell); cell=""; continue; }
+    if((c === '\n' || c === '\r') && !inQuotes){
+      if(c === '\r' && n === '\n') i++;
+      row.push(cell); cell="";
+      if(row.some(x=>String(x).trim()!=="")) rows.push(row);
+      row=[]; continue;
+    }
+    cell+=c;
+  }
+  row.push(cell);
+  if(row.some(x=>String(x).trim()!=="")) rows.push(row);
+  if(!rows.length) return [];
+  const headers = rows[0].map(x=>String(x).trim());
+  return rows.slice(1).map(r=>{
+    const o={}; headers.forEach((h,i)=>o[h]=r[i]??""); return o;
+  });
+}
+
+let pendingExcelRows = [];
+
+async function handleExcelImport(event){
+  const file = event.target.files[0];
+  event.target.value = "";
+  if(!file) return;
+  try{
+    let jsonRows = [];
+    const ext = file.name.split(".").pop().toLowerCase();
+    if(ext === "csv" && typeof XLSX === "undefined"){
+      const txt = await file.text();
+      jsonRows = parseCSVFallback(txt);
+    }else{
+      if(typeof XLSX === "undefined"){
+        alert("엑셀 읽기 기능을 불러오지 못했습니다. 인터넷 연결 후 다시 열거나, 엑셀 파일을 CSV로 저장해 불러와 주세요.");
+        return;
+      }
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf,{type:"array",cellDates:true});
+      if(!wb.SheetNames.length) throw new Error("시트 없음");
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      jsonRows = XLSX.utils.sheet_to_json(ws,{defval:"",raw:true});
+    }
+    pendingExcelRows = jsonRows.map((r,i)=>normalizeRow(r,i+2));
+    showExcelPreview(file.name);
+  }catch(err){
+    console.error(err);
+    alert("엑셀 파일을 읽을 수 없습니다. 양식의 첫 행에 열 제목이 있는지 확인해 주세요.");
+  }
+}
+
+function showExcelPreview(filename){
+  const valid = pendingExcelRows.filter(x=>x._valid);
+  const invalid = pendingExcelRows.filter(x=>!x._valid);
+  document.getElementById("excelTotal").textContent = pendingExcelRows.length;
+  document.getElementById("excelValid").textContent = valid.length;
+  document.getElementById("excelInvalid").textContent = invalid.length;
+  document.getElementById("excelConfirmBtn").disabled = valid.length === 0;
+  document.getElementById("excelConfirmBtn").textContent = `${valid.length}건 등록`;
+  document.getElementById("excelMessage").innerHTML = invalid.length
+    ? `<div class="warnbox"><strong>${escapeHtml(filename)}</strong>에서 ${invalid.length}개 행은 제목/법령명이 없어 제외됩니다.</div>`
+    : `<div class="okbox"><strong>${escapeHtml(filename)}</strong>의 모든 행을 등록할 수 있습니다.</div>`;
+  const preview = pendingExcelRows.slice(0,10);
+  document.getElementById("excelPreviewBody").innerHTML = preview.length ? preview.map(x=>`
+    <tr>
+      <td>${x._row}${x._valid?"":" <span class='overdue'>(제외)</span>"}</td>
+      <td>${escapeHtml(x.type)}</td>
+      <td>${escapeHtml(x.title||"-")}</td>
+      <td>${x.date1?x.date1:"-"}</td>
+      <td>${x.date2?x.date2:"-"}</td>
+      <td>${badgeStatus(x.status)}</td>
+    </tr>`).join("") : `<tr><td colspan="6" class="empty">데이터 행이 없습니다.</td></tr>`;
+  excelDlg.showModal();
+}
+
+function confirmExcelImport(){
+  const valid = pendingExcelRows.filter(x=>x._valid).map(({_row,_valid,...x})=>x);
+  if(!valid.length) return;
+  const data = load().map(migrateV02ToV04);
+  data.push(...valid);
+  saveAll(data);
+  excelDlg.close();
+  pendingExcelRows = [];
+  render();
+  alert(`${valid.length}건을 일괄 등록했습니다.`);
+}
+
+function csvEscape(v){
+  const s=String(v??"");
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+}
+
+function downloadExcelTemplate(){
+  const headers=["구분","제목/법령명","공포번호/문서번호","공포일/접수일","시행일/회신기한","담당/발송처","해야 할 일","주요내용/메모","상태"];
+  const examples=[
+    ["법령","건축법","제00000호","2026-09-01","2027-03-01","건축팀","회원 안내","예시 데이터","진행중"],
+    ["공문","○○ 지침 의견조회","문서-001","2026-09-09","2026-09-16","대한○○협회","의견 취합 후 회신","예시 데이터","회신대기"]
+  ];
+  if(typeof XLSX !== "undefined"){
+    const ws = XLSX.utils.aoa_to_sheet([headers,...examples]);
+    ws["!cols"]=[{wch:10},{wch:30},{wch:20},{wch:16},{wch:18},{wch:22},{wch:28},{wch:40},{wch:14}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"일괄등록양식");
+    XLSX.writeFile(wb,"공문_법령_일괄등록_양식.xlsx");
+  }else{
+    const csv = "\ufeff"+[headers,...examples].map(r=>r.map(csvEscape).join(",")).join("\r\n");
+    const blob = new Blob([csv],{type:"text/csv;charset=utf-8"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download="공문_법령_일괄등록_양식.csv"; a.click(); URL.revokeObjectURL(a.href);
+  }
+}
+
+render();
+</script>
+</body>
+</html>
